@@ -1,0 +1,37 @@
+package other.test; // Montre package composé
+
+// Montre la traduction par défaut de chaque type
+class Test as Toto {
+    key auto int id;
+    date myDate;
+    timestamp myTime;
+    bool myBool;
+    char myChar;
+    string myString;
+    string(256) mySizedString;
+    int myInt;
+    int(16) mySizedInt;
+    float myFloat;
+    double myDouble;
+
+    // indices et uniques sur plusieurs colonnes
+    index(myInt, myFloat, myDouble);
+    unique(myString, myChar);
+    unique index(myString, myInt);
+}
+
+/*
+ * Montre que la clé peut ne pas être collée sans affecter le résultat
+ * (clé primaire composée de name, isOther et favoriteNumber)
+ *
+ * Montre plusieurs clés étrangères pointant vers la même table
+ *
+ * Montre le commentaire multi-ligne
+ */
+class Other {
+    key string name;
+    key bool isOther;
+    Test something1;
+    Test something2;
+    key int favoriteNumber;
+}

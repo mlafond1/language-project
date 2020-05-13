@@ -1,0 +1,49 @@
+package test;
+
+// Exemple d'application
+
+class Customer {
+    key auto int id;
+    string email;
+    string firstName;
+    string lastName;
+    string(255) password;
+    Status status;
+    timestamp lastLogin;
+
+    unique(email);
+    unique index(lastName, firstName);
+    unique index(firstName, lastName); //permis
+}
+
+class Status {
+    key char status;
+    string statusName;
+    float discountRate;
+}
+
+class Product {
+    key auto int id;
+    string(32) name;
+    int(8) quantity;
+    double price;
+
+    unique index(name);
+    index(price);
+}
+
+class Order as Orders {
+    key auto int id;
+    Customer customerId;
+    double total;
+    Date orderDate;
+    Date deliveryDate;
+}
+
+class OrderItem {
+    key Order orderId;
+    key Product productId;
+    int(8) quantity;
+    double subTotal;
+    bool hasBeenRefunded;
+}

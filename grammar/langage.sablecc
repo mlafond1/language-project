@@ -1,0 +1,110 @@
+Package langage.grammar;
+
+Helpers
+
+    all = [0..0xffff];
+    eol = [10 + 13];
+    letter = [['a'..'z'] + ['A'..'Z']];
+    digit = ['0'..'9'];
+
+Tokens
+
+    key_keyword = 'key';
+    class_keyword = 'class';
+    auto_keyword = 'auto';
+    package_keyword = 'package';
+    unique_keyword = 'unique';
+    index_keyword = 'index';
+    as_keyword = 'as';
+
+    int_type = 'int';
+    bool_type = 'bool' 'ean'?;
+    char_type = 'char';
+    float_type = 'float';
+    double_type = 'double';
+    string_type = ('s'|'S')'tring';
+    date_type = ('d'|'D')'ate';
+    timestamp_type = ('t'|'T')'imestamp';
+    
+    l_par = '(';
+    r_par = ')';
+    l_brace = '{';
+    r_brace = '}';
+
+    semicolon = ';';
+    dot = '.';
+    comma = ',';
+    
+    identifier = (letter)(letter|digit|'_')*(letter|digit);
+    composed_identifier = (letter)(letter|digit|'_'|'.')*(letter|digit); // À améliorer..
+
+    number = digit+;
+    invalid_number = digit(letter|digit|'_')+;
+
+    blank = (' '|9|10|13)+;
+    comment = ('//' [all - eol]* eol?) |
+              ('/*' ([all - '*']('*' [all - '/'])?)* '*/');
+
+Ignored Tokens
+    blank, comment;
+
+Productions
+
+    program =
+        package? [classes]:class_declaration+;
+
+    package =
+        {simple} package_keyword [identifier]:identifier semicolon |
+        {composed} package_keyword [identifier]:composed_identifier semicolon;
+
+    class_declaration =
+        class_keyword identifier as_modifier? l_brace class_block r_brace;
+
+    class_block = 
+        class_statement+;
+
+    class_statement = 
+        {member} class_member |
+        {constraint} class_constraint;
+
+    class_constraint =
+        {unique} unique_constraint |
+        {index} index_constraint;
+
+    unique_constraint =
+        {simple} unique_keyword l_par identifier r_par semicolon |
+        {composed} unique_keyword l_par [first]:identifier [tail]:additional_identifier+ r_par semicolon;
+
+    index_constraint =
+        {simple} unique_keyword? index_keyword l_par identifier r_par semicolon |
+        {composed} unique_keyword? index_keyword l_par [first]:identifier [tail]:additional_identifier+ r_par semicolon;
+
+    class_member = 
+        {key_member} key_keyword type identifier semicolon |
+        {member} type identifier semicolon;
+
+    // Considérer les types listes?
+    type = 
+        {base} base_type |
+        {class} identifier;
+
+    base_type =
+        {int} auto_keyword? int_type size? |
+        {bool} bool_type |
+        {float} float_type |
+        {double} double_type |
+        {char} char_type |
+        {string} string_type size? |
+        {date} date_type |
+        {timestamp} timestamp_type;
+
+    size =
+        l_par number r_par;
+
+    additional_identifier =
+        comma identifier;
+
+    as_modifier =
+        as_keyword identifier;
+
+
