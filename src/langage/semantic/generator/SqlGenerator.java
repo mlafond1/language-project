@@ -7,34 +7,41 @@ import langage.semantic.structure.ClassTable;
 import langage.semantic.structure.Member;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class SqlGenerator extends DepthFirstAdapter {
 
     private Class currentClass;
-
     private ClassTable classTable;
-    private StringBuilder script;
+    private Map<String, String> scripts;
+
+    private StringBuilder createScript;
+    private StringBuilder dropScript;
     private StringBuilder uniques;
     private StringBuilder indexes;
     private StringBuilder allForeignKeys;
 
     private SqlGenerator(ClassTable classTable){
-        this.script = new StringBuilder();
+        this.scripts = new HashMap<>();
+        this.createScript = new StringBuilder();
+        this.dropScript = new StringBuilder();
         this.allForeignKeys = new StringBuilder();
         this.classTable = classTable;
     }
 
-    public static String generate(Node node, ClassTable classTable){
+    public static Map<String, String> generate(Node node, ClassTable classTable){
         SqlGenerator generator = new SqlGenerator(classTable);
         node.apply(generator);
-        return generator.script.toString();
+        return generator.scripts;
     }
 
     @Override
     public void inAClassDeclaration(AClassDeclaration node) {
         this.currentClass = classTable.get(node.getIdentifier());
-        this.script.append(String.format("Create Table `%s` (\n", currentClass.getSqlIdentifier()));
+        this.createScript.append(String.format("Create Table `%s` (\n", currentClass.getSqlIdentifier()));
+        this.dropScript.append(String.format("Drop Table IF EXISTS `%s` CASCADE;\n\n", currentClass.getSqlIdentifier()));
         this.uniques = new StringBuilder();
         this.indexes = new StringBuilder();
     }
@@ -43,14 +50,14 @@ public class SqlGenerator extends DepthFirstAdapter {
     public void inAMemberClassMember(AMemberClassMember node) {
         String identifier = node.getIdentifier().getText();
         Member member = currentClass.getMember(identifier);
-        this.script.append(String.format("    %s,\n", member.toSql()));
+        this.createScript.append(String.format("    %s,\n", member.toSql()));
     }
 
     @Override
     public void inAKeyMemberClassMember(AKeyMemberClassMember node) {
         String identifier = node.getIdentifier().getText();
         Member member = currentClass.getMember(identifier);
-        this.script.append(String.format("    %s,\n", member.toSql()));
+        this.createScript.append(String.format("    %s,\n", member.toSql()));
     }
 
     @Override
@@ -132,7 +139,7 @@ public class SqlGenerator extends DepthFirstAdapter {
             StringBuilder listPks = new StringBuilder();
             primaryKeys.forEach(member -> listPks.append(member.getIdentifier()).append(','));
             listPks.deleteCharAt(listPks.length()-1);
-            this.script.append(String.format("    CONSTRAINT PK_%s PRIMARY KEY (%s),\n",
+            this.createScript.append(String.format("    CONSTRAINT PK_%s PRIMARY KEY (%s),\n",
                     currentClass.getSqlIdentifier(), listPks.toString()));
         }
         if(foreignKeys.size() != 0) {
@@ -149,13 +156,15 @@ public class SqlGenerator extends DepthFirstAdapter {
             }
             this.allForeignKeys.replace(this.allForeignKeys.length()-2, this.allForeignKeys.length()-1, ";\n");
         }
-        this.script.append(uniques);
-        this.script.deleteCharAt(this.script.length()-2); // enlever la virgule..
-        this.script.append(");\n\n").append(indexes);
+        this.createScript.append(uniques);
+        this.createScript.deleteCharAt(this.createScript.length()-2); // enlever la virgule..
+        this.createScript.append(");\n\n").append(indexes);
     }
 
     @Override
     public void outAProgram(AProgram node) {
-        this.script.append("-- Foreign keys --\n\n").append(allForeignKeys);
+        this.createScript.append("-- Foreign keys --\n\n").append(allForeignKeys);
+        this.scripts.put("create.sql", createScript.toString());
+        this.scripts.put("drop.sql", dropScript.toString());
     }
 }

@@ -31,7 +31,9 @@ public class Main {
             Node tree = parser.parse();
             ClassTable table = ClassAnalysis.verify(tree);
 
-            printFile("script.sql", SqlGenerator.generate(tree, table));
+            for (var entry : SqlGenerator.generate(tree, table).entrySet()){
+                printFile(entry.getKey(), entry.getValue());
+            }
             for (var entry : DtoGenerator.generate(tree, table).entrySet()) {
                 printFile(entry.getKey(), entry.getValue());
             }
